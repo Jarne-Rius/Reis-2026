@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reisplanner</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#1d2327"><meta name="apple-mobile-web-app-title" content="Reisplanner">
+<style>
+:root{--bg:#f6f3ee;--card:#fff;--ink:#1d2327;--mute:#69737a;--line:#e3ddd3;--flight:#0b6e8a;--hotel:#b5532a;--warn:#c28a00;--ok:#2f7d4f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181b;--card:#1e2327;--ink:#eceae5;--mute:#98a2a9;--line:#2e353a;--flight:#5cc3df;--hotel:#e8946a;--warn:#e5b93c;--ok:#6cc08d}}
+:root[data-theme="dark"]{--bg:#14181b;--card:#1e2327;--ink:#eceae5;--mute:#98a2a9;--line:#2e353a;--flight:#5cc3df;--hotel:#e8946a;--warn:#e5b93c;--ok:#6cc08d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Georgia,"Times New Roman",serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.7rem;margin:.2em 0 .1em}
+.sub{color:var(--mute);font:.9rem system-ui,sans-serif}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:18px 0;font-family:system-ui,sans-serif}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:1.35rem}
+.stat span{font-size:.78rem;color:var(--mute)}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;font-family:system-ui,sans-serif}
+.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 14px;border-radius:99px;cursor:pointer;font-size:.85rem}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.tl{position:relative;margin-left:8px;border-left:2px solid var(--line);padding-left:18px}
+.item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-family:system-ui,sans-serif}
+.item::before{content:"";position:absolute;left:-26px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--c);border:2px solid var(--bg)}
+.item.flight{--c:var(--flight)}.item.hotel{--c:var(--hotel)}.item.gap{--c:var(--warn);border-style:dashed}
+.date{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.title{font-weight:600;font-size:1.02rem;margin:2px 0}
+.meta{font-size:.88rem;color:var(--mute)}
+.tag{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);margin-right:6px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}
+.next{outline:2px solid var(--flight)}
+.item.transfer{--c:#7b5ea7}.item.act{--c:var(--ok)}
+.opt{border-top:1px solid var(--line);padding:8px 0;font-size:.88rem}
+.opt:first-of-type{margin-top:8px}
+.opt b{display:inline-block;min-width:64px}
+a{color:var(--flight);text-decoration:none;border-bottom:1px dotted var(--flight)}
+.lk{display:inline-block;margin:4px 10px 0 0;font-size:.82rem}
+details{margin-top:6px}summary{cursor:pointer;font-size:.88rem;color:var(--flight)}
+ul.ac{margin:8px 0 0;padding-left:0;list-style:none}
+ul.ac li{padding:7px 0;border-top:1px solid var(--line);font-size:.88rem}
+.item.tour{--c:#c2548a}
+.nav{display:flex;gap:6px;margin:16px 0 4px;flex-wrap:wrap;font-family:system-ui,sans-serif;border-bottom:1px solid var(--line)}
+.nav button{border:0;background:none;color:var(--mute);padding:8px 12px;cursor:pointer;font-size:.92rem;border-bottom:2px solid transparent;margin-bottom:-1px}
+.nav button.on{color:var(--ink);border-color:var(--ink);font-weight:600}
+.view{display:none;margin-top:14px;font-family:system-ui,sans-serif}.view.on{display:block}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.cat h3{margin:0 0 6px;font-size:.8rem;letter-spacing:.06em;color:var(--mute);display:flex;justify-content:space-between}
+.pi{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:.95rem}
+.pi:first-of-type{border-top:0}
+.pi input{width:20px;height:20px;flex:none}
+.pi.done span{text-decoration:line-through;color:var(--mute)}
+.pi span{flex:1}.pi .x{border:0;background:none;color:var(--mute);cursor:pointer;font-size:1.1rem}
+.add{display:flex;gap:6px;margin-top:8px}
+input[type=text],input[type=number]{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:.9rem}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.85rem}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:6px 0 14px}.bar i{display:block;height:100%;background:var(--ok);width:0}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
+th,td{padding:7px 8px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+td.r,th.r{text-align:right;white-space:nowrap}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+.unk li{margin:4px 0}
+.ed{float:right;border:1px solid var(--line);background:var(--bg);color:var(--mute);border-radius:8px;padding:2px 9px;font-size:.78rem;cursor:pointer;margin-left:8px}
+.fm{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;color:var(--mute)}
+.fm label{display:flex;flex-direction:column;gap:3px}.fm .w{grid-column:1/-1}
+.fm input,.fm textarea,.fm select{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 9px;font:inherit;font-size:.9rem;width:100%}
+.fm textarea{min-height:64px;resize:vertical}
+.btn.p{background:var(--ink);color:var(--bg);border-color:var(--ink)}.btn.d{color:#c0392b}
+.map svg{width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+.map .leg{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.92rem}
+.doc{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:4px}
+.doc a.pdf{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:3px 9px;background:var(--bg);font-size:.82rem;border-bottom:1px solid var(--line)}
+.up{display:grid;grid-template-columns:1fr 1fr;gap:8px}.up .w{grid-column:1/-1}
+.up select,.up input[type=file]{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:7px 9px;font:inherit;font-size:.88rem}
+#syncbar{margin:6px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dot{width:9px;height:9px;border-radius:50%;background:var(--mute);display:inline-block}.dot.ok{background:var(--ok)}.dot.busy{background:var(--flight)}.dot.auth,.dot.err{background:#c0392b}.dot.off{background:var(--warn)}
+#viewer{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}#viewer .vh{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 12px;font:.9rem system-ui,sans-serif;border-bottom:1px solid var(--line)}#viewer iframe,#viewer img{flex:1;width:100%;border:0;object-fit:contain;min-height:0}.map g[data-stop]{cursor:pointer}
+.foot{font:.78rem system-ui,sans-serif;color:var(--mute);margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<h1>Reisplanner</h1>
+<div class="sub" id="sub"></div><div class="sub" id="syncbar"></div>
+<div class="nav" id="nav"></div>
+<div class="view on" id="v-plan">
+<div class="stats" id="stats"></div>
+<div class="tabs" id="tabs"></div>
+<div id="tools"></div>
+<div class="tl" id="tl"></div>
+</div>
+<div class="view" id="v-map"></div>
+<div class="view" id="v-docs"></div>
+<div class="view" id="v-rune"></div>
+<div class="view" id="v-jarne"></div>
+<div class="view" id="v-price"></div>
+<div class="view" id="v-set"></div>
+<div class="foot">Alles wat je aanpast wordt op dit toestel bewaard en met Google Drive gesynchroniseerd zodra er internet is. Vervoersuren en prijzen zijn indicatief: controleer vlak voor de boeking.</div>
+</main>
+<script>
+const ST=(()=>{try{return JSON.parse(localStorage.getItem("rp-state"))||{}}catch(e){return{}}})();
+let META=ST.META||{};
+const D=(s)=>new Date(s+"T00:00:00");
+const g=(a,b)=>`https://12go.asia/en/travel/${a}/${b}`;
+const gyg=q=>"https://www.getyourguide.com/s/?q="+encodeURIComponent(q);
+const mp=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+const bl=(a,b)=>`https://www.baolau.com/en/s/${a}/${b}/`;
+const DSVN="https://dsvn.vn";
+const ac=(n,t,q,x)=>({n,t,l:mp(q||n),x});
+let HOTELS=META.HOTELS||{};
+const CATS=["Vluchten","Verblijf","Tours & cruise","Vervoer","Activiteiten","Eten & drinken","Verzekering & praktisch","Overig"];
+const catOf=i=>i.cat||(i.t==="flight"?"Vluchten":(i.t==="tour"||/cruise/i.test(i.title))?"Tours & cruise":i.t==="hotel"?"Verblijf":i.t==="transfer"?"Vervoer":i.t==="act"?"Activiteiten":"Overig");
+const docLinks=i=>(i.docs||[]).map(d=>`<a class="pdf" href="#" data-doc="${esc(d.id)}" data-dn="${esc(d.n)}">📎 ${esc(d.n)}</a>`).join("");
+const hl=i=>{const h=HOTELS[i.title];return h?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(i.title+" "+h.addr)+"&query_place_id="+h.pid:mp(i.title+" "+(i.place||"").split(" · ")[0])};
+const items=Array.isArray(ST.items)?ST.items:[];
+const fmt=d=>d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+const nights=(a,b)=>Math.round((D(b)-D(a))/864e5);
+let filter="all",editing=null,RATE=ST.RATE||30000;
+const today=new Date();today.setHours(0,0,0,0);
+const TL={flight:"Vlucht",hotel:"Hotel",transfer:"Vervoer",act:"Activiteiten",tour:"Tour",cost:"Kost",gap:"Nog te regelen"};
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const saveItems=()=>persist();
+const refresh=()=>{stats();render();if(typeof renderPrice==="function")renderPrice();if(typeof renderMap==="function")renderMap();if(typeof renderDocs==="function")renderDocs()};
+
+function form(i,idx){
+  const isNew=idx==="new";
+  const opts=(i.opts||[]).map(o=>o[0]+" | "+o[1]).join("\n");
+  const acts=(i.acts||[]).map(a=>a.n+" | "+a.t).join("\n");
+  const f=(n,l,v,type="text",w=false)=>`<label class="${w?"w":""}">${l}<input type="${type}" name="${n}" value="${esc(v)}"></label>`;
+  const ta=(n,l,v)=>`<label class="w">${l}<textarea name="${n}">${esc(v)}</textarea></label>`;
+  return `<div class="fm" data-idx="${idx}">
+    ${isNew?`<label class="w">Soort<select name="t">${Object.entries(TL).map(([k,v])=>`<option value="${k}"${k===i.t?" selected":""}>${v}</option>`).join("")}</select></label>`:""}
+    ${f("d","Datum (van)",i.d||"2026-11-02","date")}${f("e","Tot (optioneel)",i.e||"","date")}
+    ${f("title","Titel",i.title,"text",true)}${f("place","Plaats / extra",i.place,"text",true)}
+    ${ta("meta","Details (uren, kamer, …)",i.meta)}${ta("note","Notitie",i.note)}
+    ${ta("src","Boeking: waar geboekt, referentie, bewijs",i.src)}
+    ${f("st","Status (bv. Bevestigd, Open)",i.st)}${f("pn","Prijsopmerking",i.pn)}
+    ${f("price","Prijs in € (totaal)",i.price,"number")}${f("vnd","Prijs in VND (totaal)",i.vnd,"number")}
+    <label class="w">Categorie (voor Prijzen)<select name="cat"><option value="">Automatisch (${esc(catOf({...i,cat:""}))})</option>${CATS.map(c=>`<option${c===i.cat?" selected":""}>${c}</option>`).join("")}</select></label>
+    ${(isNew||i.opts||["transfer","tour"].includes(i.t))?ta("opts","Vervoersopties, één per lijn: soort | tekst",opts):""}
+    ${(isNew||i.acts||i.t==="act")?ta("acts","Plekken, één per lijn: naam | beschrijving",acts):""}
+    <div class="w"><button class="btn p" data-save="${idx}">Opslaan</button> <button class="btn" data-cancel="1">Annuleer</button> ${isNew?"":`<button class="btn d" data-del="${idx}">Verwijder</button>`}</div>
+  </div>`;
+}
+function applyForm(box){
+  const idx=box.dataset.idx,isNew=idx==="new";
+  const q=n=>{const e=box.querySelector(`[name=${n}]`);return e?e.value.trim():null};
+  const it=isNew?{t:q("t")||"act"}:items[idx];
+  const d=q("d");if(!d){box.querySelector("[name=d]").focus();return}
+  it.d=d;const e=q("e");e?it.e=e:delete it.e;
+  ["title","place","meta","note","src","st","pn","cat"].forEach(k=>{const v=q(k);v?it[k]=v:delete it[k]});
+  if(!it.title)it.title="Nieuw item";
+  ["price","vnd"].forEach(k=>{const v=parseFloat((q(k)||"").replace(",","."));isNaN(v)?delete it[k]:it[k]=v});
+  if(isNew&&it.t==="gap"&&!it.st)it.st="Open";
+  const o=q("opts");
+  if(o!==null){const old=it.opts||[];const l=o.split("\n").map(x=>x.trim()).filter(Boolean);
+    l.length?it.opts=l.map((x,k)=>{const p=x.split("|");return [p[0].trim(),p.slice(1).join("|").trim(),(old[k]&&old[k][2])||[]]}):delete it.opts}
+  const a=q("acts");
+  if(a!==null){const old=it.acts||[];const l=a.split("\n").map(x=>x.trim()).filter(Boolean);
+    l.length?it.acts=l.map(x=>{const p=x.split("|");const n=p[0].trim();const prev=old.find(z=>z.n===n);return {n,t:p.slice(1).join("|").trim(),l:prev?prev.l:mp(n)}}):delete it.acts}
+  if(isNew)items.push(it);
+  items.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0);
+  saveItems();editing=null;refresh();
+}
+function render(){
+  const list=items.map((i,idx)=>[i,idx]).filter(([i])=>filter==="all"||i.t===filter||(filter==="act"&&i.t==="tour"));
+  const nxt=items.find(i=>D(i.d)>=today&&["flight","hotel","tour"].includes(i.t));
+  let h=editing==="new"?`<div class="item act">${form({t:"act",d:"2026-11-02"},"new")}</div>`:"";
+  h+=list.map(([i,idx])=>{
+    if(editing===idx)return `<div class="item ${i.t}">${form(i,idx)}</div>`;
+    const dateTxt=i.e?`${fmt(D(i.d))} → ${fmt(D(i.e))} · ${nights(i.d,i.e)} ${nights(i.d,i.e)===1?"nacht":"nachten"}`:fmt(D(i.d));
+    let body="";
+    if(i.opts)body=i.opts.map(o=>`<div class="opt"><b>${o[0]}</b> ${o[1]}<div>${(o[2]||[]).map(l=>`<a class="lk" href="${l[1]}" target="_blank" rel="noopener">${l[0]} ↗</a>`).join("")}</div></div>`).join("");
+    if(i.acts)body=`<details ${filter==="act"?"open":""}><summary>${i.acts.length} plekken bekijken</summary><ul class="ac">${i.acts.map(a=>`<li><a href="${a.l}" target="_blank" rel="noopener"><b>${esc(a.n)}</b> ↗</a><div class="meta">${esc(a.t)}</div></li>`).join("")}</ul></details>`;
+    const price=(i.price?" · € "+i.price.toLocaleString("nl-BE"):"")+(i.vnd?" · "+Math.round(i.vnd).toLocaleString("nl-BE")+" VND (≈ € "+Math.round(i.vnd/RATE)+")":"");
+    const cls=i.t==="gap"||/nog te/i.test(i.st||"")?"warn":"ok";
+    return `<div class="item ${i.t}${i===nxt?" next":""}">
+      <button class="ed" data-edit="${idx}">✎ Bewerk</button>
+      <div class="date">${dateTxt}</div>
+      <div class="title">${esc(i.title)}</div>
+      <div class="meta">${i.place?esc(i.place)+" · ":""}${esc(i.meta||"")}${price}</div>
+      ${i.note?`<div class="meta">${esc(i.note)}</div>`:""}
+      ${i.src?`<div class="meta"><b>Boeking:</b> ${esc(i.src)}</div>`:""}
+      ${i.docs&&i.docs.length?`<div class="doc">${docLinks(i)}</div>`:""}
+      ${body}
+      <div style="margin-top:6px"><span class="tag">${TL[i.t]||i.t}</span>${i.st?`<span class="${cls}">${esc(i.st)}</span>`:""}${i.t==="hotel"?` <a class="lk" href="${hl(i)}" target="_blank" rel="noopener">📍 Maps ↗</a>`:""}${i===nxt?' <span class="tag">Volgende</span>':""}</div>
+    </div>`}).join("");
+  document.getElementById("tl").innerHTML=h;
+  document.getElementById("tools").innerHTML=`<button class="btn p" data-new="1" style="margin-bottom:12px">+ Nieuw item</button>`;
+}
+function known(){
+  return items.filter(i=>i.price||i.vnd).map(i=>[
+    i.title+(i.place&&i.t==="hotel"?" ("+i.place.split(" · ")[0]+")":""),
+    i.price?i.price:i.vnd/RATE,
+    i.pn||((i.vnd?Math.round(i.vnd).toLocaleString("nl-BE")+" VND · ":"")+(i.e?`${fmt(D(i.d))} → ${fmt(D(i.e))}`:fmt(D(i.d)))),catOf(i)]);
+}
+function stats(){
+  const ds=items.map(i=>i.d).sort(),de=items.map(i=>i.e||i.d).sort(),F0=ds[0]||"2026-01-01",L0=de[de.length-1]||F0,first=D(F0),last=D(L0);
+  const days=Math.ceil((first-today)/864e5);
+  const booked=items.filter(i=>(["hotel","tour"].includes(i.t)||i.night)&&i.e).reduce((s,i)=>s+nights(i.d,i.e),0);
+  const open=items.filter(i=>i.t==="gap"&&i.e).reduce((s,i)=>s+nights(i.d,i.e),0);
+  const cd=days>0?days:(today>last?"Voorbij":"Onderweg");
+  const tot=known().reduce((s,r)=>s+r[1],0);
+  document.getElementById("stats").innerHTML=
+   [[cd,days>0?"dagen tot vertrek":"status"],[nights(F0,L0),"nachten totaal"],
+    [booked,"nachten geregeld"],[open,"nachten nog open"],["≈ € "+Math.round(tot),"bekende kosten (zie Prijzen)"]]
+   .map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+document.getElementById("v-plan").addEventListener("click",e=>{
+  const d=e.target.dataset;
+  if(d.edit!==undefined){editing=+d.edit;render()}
+  else if(d.new){editing="new";render();}
+  else if(d.cancel){editing=null;render()}
+  else if(d.save!==undefined)applyForm(e.target.closest(".fm"));
+  else if(d.del!==undefined){items.splice(+d.del,1);saveItems();editing=null;refresh()}
+});
+const tabs=[["all","Alles"],["flight","Vluchten"],["hotel","Hotels"],["transfer","Vervoer"],["act","Activiteiten"],["gap","Open"]];
+document.getElementById("tabs").innerHTML=tabs.map(([k,l])=>`<button data-k="${k}" class="${k==="all"?"on":""}">${l}</button>`).join("");
+document.getElementById("tabs").addEventListener("click",e=>{
+  const k=e.target.dataset.k;if(!k)return;filter=k;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.k===k));render();
+});
+stats();render();
+/* ---------- navigatie ---------- */
+const nm=k=>((META.names||{})[k])||(k==="rune"?"Paklijst 1":"Paklijst 2");
+const views=()=>[["plan","Planning"],["map","Kaart"],["docs","Documenten"],["rune","Paklijst "+nm("rune")],["jarne","Paklijst "+nm("jarne")],["price","Prijzen"],["set","⚙"]];
+let curView="plan";
+const renderNav=()=>{document.getElementById("nav").innerHTML=views().map(([k,l])=>`<button data-v="${k}" class="${k===curView?"on":""}">${l}</button>`).join("")};
+document.getElementById("nav").addEventListener("click",e=>{const k=e.target.dataset.v;if(!k)return;
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===k));
+  curView=k;views().forEach(([v])=>document.getElementById("v-"+v).classList.toggle("on",v===k));});
+/* ---------- paklijsten (opgeslagen in de browser) ---------- */
+const mk=a=>a.map(t=>({t,d:false}));
+const DEF={rune:{"MEDICATIE":[],"VERZORGING":[],"KLEREN":[],"DIVERS":[]},jarne:{"MEDICATIE":[],"VERZORGING":[],"KLEREN":[],"DIVERS":[]}};
+let P=ST.P;
+if(!P||!P.rune||!P.jarne)P=JSON.parse(JSON.stringify(DEF));
+const save=()=>persist();
+function renderPack(w){
+  const el=document.getElementById("v-"+w),L=P[w];
+  const all=Object.values(L).flat(),done=all.filter(x=>x.d).length;
+  el.innerHTML=`<div class="meta"><b>${done}</b> van ${all.length} ingepakt</div><div class="bar"><i style="width:${all.length?done/all.length*100:0}%"></i></div>`+
+  Object.entries(L).map(([c,it])=>`<div class="cat"><h3><span>${c}</span><span>${it.filter(x=>x.d).length}/${it.length}</span></h3>`+
+   (it.length?it.map((x,i)=>`<div class="pi${x.d?" done":""}"><input type="checkbox" data-w="${w}" data-c="${c}" data-i="${i}" ${x.d?"checked":""}><span>${esc(x.t)}</span><button class="x" data-del="1" data-w="${w}" data-c="${c}" data-i="${i}" aria-label="Verwijder">×</button></div>`).join(""):`<div class="meta">Nog niets op deze lijst.</div>`)+
+   `<div class="add"><input type="text" placeholder="Toevoegen aan ${c.toLowerCase()}…" data-add="${w}|${c}"><button class="btn" data-addbtn="${w}|${c}">+</button></div></div>`).join("")+
+  `<div class="add"><input type="text" placeholder="Nieuwe categorie…" data-newcat="${w}"><button class="btn" data-newcatbtn="${w}">+ categorie</button></div><button class="btn" data-reset="${w}" style="margin-top:8px">Alles uitvinken</button>`;
+}
+function addItem(k,el){const [w,c]=k.split("|");const v=el.value.trim();if(!v)return;P[w][c].push({t:v,d:false});save();renderPack(w);}
+function addCat(w,el){const v=el.value.trim().toUpperCase();if(!v||P[w][v])return;P[w][v]=[];save();renderPack(w);}
+["rune","jarne"].forEach(w=>{
+  const el=document.getElementById("v-"+w);
+  el.addEventListener("change",e=>{const d=e.target.dataset;if(d.i===undefined||d.del)return;P[d.w][d.c][d.i].d=e.target.checked;save();renderPack(w)});
+  el.addEventListener("click",e=>{const d=e.target.dataset;
+    if(d.del){P[d.w][d.c].splice(d.i,1);save();renderPack(w)}
+    if(d.reset){Object.values(P[w]).flat().forEach(x=>x.d=false);save();renderPack(w)}
+    if(d.addbtn)addItem(d.addbtn,e.target.previousElementSibling);
+    if(d.newcatbtn)addCat(d.newcatbtn,e.target.previousElementSibling)});
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.add)addItem(e.target.dataset.add,e.target);
+    if(e.key==="Enter"&&e.target.dataset.newcat)addCat(e.target.dataset.newcat,e.target)});
+  renderPack(w);
+});
+/* ---------- kaart (getekend op de pagina, links naar Google Maps) ---------- */
+let STOPS=META.STOPS||[];
+let LBL=META.LBL||{};
+let selStop=null;
+const allDir=()=>{if(STOPS.length<2)return "https://www.google.com/maps";const q=encodeURIComponent;const mid=STOPS.slice(1,-1).slice(0,9).map(x=>q(x[3])).join("|");return "https://www.google.com/maps/dir/?api=1&origin="+q(STOPS[0][3])+"&destination="+q(STOPS[STOPS.length-1][3])+(mid?"&waypoints="+mid:"")};
+function stopPanel(){
+  if(selStop==null||!STOPS[selStop])return `<div class="meta" style="margin:8px 0">Tik op een stop op de kaart of in de lijst.</div>`;
+  const x=STOPS[selStop],r=x[6]||[];
+  const its=items.filter(i=>i.c?i.c===x[0]:(r.length&&i.d>=r[0]&&i.d<r[1]&&i.t!=="flight"));
+  const row=i=>{const h=HOTELS[i.title];
+    const links=(i.t==="hotel"?`<a class="lk" href="${hl(i)}" target="_blank" rel="noopener">📍 Maps ↗</a>${h&&h.site?`<a class="lk" href="${h.site}" target="_blank" rel="noopener">Website ↗</a>`:""}`:"")
+      +(i.opts?i.opts.flatMap(o=>(o[2]||[]).map(l=>`<a class="lk" href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])} ↗</a>`)).join(""):"")
+      +(i.t==="flight"||i.t==="tour"?`<a class="lk" href="${mp(i.title)}" target="_blank" rel="noopener">📍 Maps ↗</a>`:"");
+    const acts=i.acts?`<ul class="ac">${i.acts.map(a=>`<li><a href="${a.l}" target="_blank" rel="noopener"><b>${esc(a.n)}</b> ↗</a><div class="meta">${esc(a.t)}</div></li>`).join("")}</ul>`:"";
+    return `<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="date">${i.e?esc(fmt(D(i.d)))+" → "+esc(fmt(D(i.e))):esc(fmt(D(i.d)))} · ${esc(TL[i.t]||i.t)}</div><div><b>${esc(i.title)}</b></div>
+    ${h?`<div class="meta">${esc(h.addr)}</div>`:""}${i.meta?`<div class="meta">${esc(i.meta)}</div>`:""}${i.note?`<div class="meta">${esc(i.note)}</div>`:""}${i.st?`<div class="meta"><b>${esc(i.st)}</b></div>`:""}
+    <div>${links}</div>${i.docs&&i.docs.length?`<div class="doc">${docLinks(i)}</div>`:""}${acts}</div>`};
+  return `<div class="cat"><h3><span>${esc(x[0].toUpperCase())} · ${esc(x[4])}</span><a class="lk" href="${mp(x[3])}" target="_blank" rel="noopener">📍 Maps ↗</a></h3>${its.length?its.map(row).join(""):`<div class="meta">Voor deze stop staat nog niets in de planning.</div>`}</div>`;
+}
+function renderMap(){
+  const X=o=>(o-99.5)*34+14,Y=a=>(23.5-a)*34+14;
+  const dir=(a,b)=>"https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(a)+"&destination="+encodeURIComponent(b);
+  const pts=STOPS.map(x=>X(x[2]).toFixed(0)+","+Y(x[1]).toFixed(0)).join(" ");
+  const dots=STOPS.map((x,i)=>{const [dx,dy,an]=LBL[x[0]],cx=X(x[2]),cy=Y(x[1]);
+    return `<g data-stop="${i}"><circle cx="${cx}" cy="${cy}" r="${i===selStop?9:6}" fill="${x[5]?"var(--flight)":"var(--bg)"}" stroke="var(--flight)" stroke-width="2"${x[5]?"":' stroke-dasharray="3 2"'}/><text x="${cx+dx}" y="${cy+dy}" text-anchor="${an}" font-size="11" fill="var(--ink)" font-family="system-ui,sans-serif">${i+1}. ${x[0]}</text></g>`}).join("");
+  document.getElementById("v-map").innerHTML=`<div class="map"><svg viewBox="0 0 360 390" role="img" aria-label="Schematische routekaart"><polyline points="${pts}" fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round"/>${dots}</svg>
+  <div class="meta" style="margin:6px 0 10px">Schematische kaart, geen echte kaart: tik op een stop voor alle details. Open stukken (Laos, Bangkok) zijn onderbroken getekend.</div>
+  ${stopPanel()}
+  <a class="lk" href="${allDir()}" target="_blank" rel="noopener">Hele route in Google Maps ↗</a>
+  ${STOPS.map((x,i)=>`<div class="leg" data-leg="${i}" style="cursor:pointer"><span><b>${i+1}. ${x[0]}</b> <span class="meta">${x[4]}</span></span><span><a class="lk" href="${mp(x[3])}" target="_blank" rel="noopener">📍 Maps ↗</a>${i<STOPS.length-1?`<a class="lk" href="${dir(x[3],STOPS[i+1][3])}" target="_blank" rel="noopener">Route → ${STOPS[i+1][0]} ↗</a>`:""}</span></div>`).join("")}
+  <h3 style="margin:22px 0 4px;font-size:1rem">Verblijven</h3>
+  <div class="meta" style="margin-bottom:8px">Dates uit de planning; de Google-score (aantal reviews) is een momentopname.</div>
+  ${items.filter(i=>i.t==="hotel").map(i=>{const h=HOTELS[i.title];const n=i.e?nights(i.d,i.e):0;
+   return `<div class="cat"><b>${esc(i.title)}</b><div class="meta">${fmt(D(i.d))}${i.e?` → ${fmt(D(i.e))} · ${n} ${n===1?"nacht":"nachten"}`:""}${h?` · ★ ${h.r}`:""}</div>
+   ${h?`<div class="meta">${esc(h.addr)}</div><div class="meta">${esc(h.tip)}</div>`:""}
+   <a class="lk" href="${hl(i)}" target="_blank" rel="noopener">📍 Maps ↗</a>${h&&h.site?`<a class="lk" href="${h.site}" target="_blank" rel="noopener">Website ↗</a>`:""}</div>`}).join("")}</div>`;
+}
+document.getElementById("v-map").addEventListener("click",e=>{if(e.target.closest("a"))return;const g=e.target.closest("[data-stop]");const l=e.target.closest("[data-leg]");const i=g?+g.dataset.stop:l?+l.dataset.leg:null;if(i!==null){selStop=i;renderMap();const p=document.querySelector("#v-map .cat");if(p)p.scrollIntoView({behavior:"smooth",block:"nearest"})}});
+renderMap();
+/* ---------- documenten (bewijzen van boekingen) ---------- */
+let upMsg="";
+function renderDocs(){
+  const el=document.getElementById("v-docs");if(!el)return;
+  const have=items.map((i,idx)=>[i,idx]).filter(([i])=>i.docs&&i.docs.length);
+  const ord=c=>{const x=CATS.indexOf(c);return x<0?99:x};
+  const cats=[...new Set(have.map(([i])=>catOf(i)))].sort((a,b)=>ord(a)-ord(b));
+  const nDocs=new Set(have.flatMap(([i])=>i.docs.map(d=>d.id))).size;
+  const miss=items.filter(i=>["flight","hotel","tour"].includes(i.t)&&!(i.docs&&i.docs.length));
+  const E=n=>"€ "+n.toLocaleString("nl-BE",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const price=i=>(i.price?E(i.price):"")+(i.vnd?(i.price?" · ":"")+Math.round(i.vnd).toLocaleString("nl-BE")+" VND (≈ "+E(i.vnd/RATE)+")":"");
+  const opts=items.map((i,idx)=>["flight","hotel","tour","transfer","cost"].includes(i.t)?`<option value="${idx}">${esc(fmt(D(i.d)))} · ${esc(i.title)}</option>`:"").join("");
+  el.innerHTML=`<div class="meta"><b>${nDocs}</b> documenten bij <b>${have.length}</b> boekingen. Tik op een bestand om het te openen.</div>
+  ${cats.map(c=>`<div class="cat"><h3><span>${esc(c.toUpperCase())}</span><span>${have.filter(([i])=>catOf(i)===c).length}</span></h3>`+
+   have.filter(([i])=>catOf(i)===c).map(([i])=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div><b>${esc(i.title)}</b></div>
+    <div class="meta">${i.e?esc(fmt(D(i.d)))+" → "+esc(fmt(D(i.e))):esc(fmt(D(i.d)))}${price(i)?" · "+price(i):""}</div>
+    ${i.src?`<div class="meta">${esc(i.src)}</div>`:""}
+    <div class="doc">${docLinks(i)}</div></div>`).join("")+`</div>`).join("")}
+  ${miss.length?`<div class="cat"><h3><span>NOG GEEN BEWIJS</span><span>${miss.length}</span></h3>${miss.map(i=>`<div class="meta" style="padding:4px 0;border-top:1px solid var(--line)">${esc(fmt(D(i.d)))} · ${esc(i.title)}</div>`).join("")}</div>`:""}
+  ${true?`<div class="cat"><h3><span>DOCUMENT TOEVOEGEN</span></h3><div class="up">
+   <label class="w meta">Bij welke boeking?<select id="up-item">${opts}</select></label>
+   <label class="w meta">Bestand (pdf of foto)<input type="file" id="up-file" accept="application/pdf,image/*"></label>
+   <label class="w meta">Naam (optioneel)<input type="text" id="up-name" placeholder="bv. Bevestiging hotel"></label>
+   <div class="w"><button class="btn p" data-up="1">Uploaden</button> <span class="meta" id="up-msg">${esc(upMsg)}</span></div></div></div>`:`<div class="meta" style="margin-top:10px">Toevoegen kan alleen wie de pagina mag bewerken.</div>`}`;
+}
+document.getElementById("v-docs").addEventListener("click",async e=>{
+  if(!e.target.dataset.up)return;
+  const msg=document.getElementById("up-msg"),f=document.getElementById("up-file").files[0];
+  if(!f){msg.textContent="Kies eerst een bestand.";return}
+  try{const id=await addDoc(f);const idx=+document.getElementById("up-item").value;
+    const n=document.getElementById("up-name").value.trim()||f.name.replace(/\.[^.]+$/,"");
+    items[idx].docs=(items[idx].docs||[]).concat([{id,n}]);upMsg="Toegevoegd: "+n+" (gaat naar Drive zodra er internet is)";persist();refresh();sync();
+  }catch(err){msg.textContent="Toevoegen mislukt."}
+});
+renderDocs();
+/* ---------- prijzen ---------- */
+const eur=n=>"€ "+n.toLocaleString("nl-BE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const vnd=n=>n.toLocaleString("nl-BE")+" VND";
+let UNK=null,unkEdit=false;
+UNK=Array.isArray(ST.UNK)?ST.UNK:[];
+const saveUnk=()=>persist();
+function renderPrice(){
+  const k=known(),tot=k.reduce((s,r)=>s+r[1],0);
+  const ord=c=>{const x=CATS.indexOf(c);return x<0?99:x};
+  const cats=[...new Set(k.map(r=>r[3]))].sort((x,y)=>ord(x)-ord(y));
+  const sum=c=>k.filter(r=>r[3]===c).reduce((s,r)=>s+r[1],0);
+  const loop=META.LOOP||[];
+  document.getElementById("v-price").innerHTML=`
+  <div class="add" style="margin-bottom:12px;align-items:center"><span class="meta">Wisselkoers 1 € =</span><input type="number" id="rate" value="${RATE}" step="100" style="max-width:110px"><span class="meta">VND (indicatief)</span></div>
+  <div class="tw"><table><tr><th>Categorie</th><th class="r">Totaal</th><th class="r">Per persoon</th><th class="r">%</th></tr>
+  ${cats.map(c=>{const t=sum(c),pc=tot?t/tot*100:0;return `<tr><td>${esc(c)}<div class="bar" style="margin:4px 0 0;height:5px"><i style="width:${pc}%"></i></div></td><td class="r">${eur(t)}</td><td class="r">${eur(t/2)}</td><td class="r">${Math.round(pc)} %</td></tr>`}).join("")}
+  <tr class="tot"><td>Totaal bekend</td><td class="r">${eur(tot)}</td><td class="r">${eur(tot/2)}</td><td class="r">100 %</td></tr></table></div>
+  <div class="meta" style="margin-top:6px">Per persoon = totaal ÷ 2 (gelijk verdeeld).</div>
+  <details open><summary>Detail per categorie</summary><div class="tw"><table><tr><th>Wat</th><th class="r">Totaal</th><th class="r">Per persoon</th><th>Opmerking</th></tr>
+  ${cats.map(c=>`<tr style="background:var(--bg)"><td colspan="4"><b>${esc(c)}</b> · subtotaal ${eur(sum(c))}</td></tr>`+k.filter(r=>r[3]===c).map(r=>`<tr><td>${esc(r[0])}</td><td class="r">${eur(r[1])}</td><td class="r">${eur(r[1]/2)}</td><td class="meta">${esc(r[2])}</td></tr>`).join("")).join("")}
+  </table></div></details>
+  <div class="meta" style="margin-top:6px">Prijzen worden automatisch overgenomen uit de Planning: pas een item aan (✎ Bewerk) of voeg een item met een prijs toe, bv. soort “Kost”.</div>
+  ${loop.length?"":"<!--"}<details><summary>${esc(META.LOOPT||"Uitsplitsing")}</summary><div class="tw"><table>${loop.map(r=>`<tr><td>${r[0]}</td><td class="r">${vnd(r[1])}</td></tr>`).join("")}<tr class="tot"><td>Totaal</td><td class="r">${vnd(loop.reduce((s,r)=>s+r[1],0))}</td></tr></table></div></details>${loop.length?"":"-->"}
+  <div class="cat" style="margin-top:16px"><h3><span>NOG GEEN PRIJS BEKEND</span><button class="btn" data-unk="1">${unkEdit?"Opslaan":"Bewerk"}</button></h3>
+   ${unkEdit?`<textarea id="unk" style="width:100%;min-height:140px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px;font:inherit">${esc(UNK.join("\n"))}</textarea><div class="meta">Eén punt per regel.</div>`
+   :`<ul class="unk" style="margin:6px 0;padding-left:18px;font-size:.9rem">${UNK.map(u=>`<li>${esc(u)}</li>`).join("")}</ul>`}</div>`;
+  document.getElementById("rate").addEventListener("change",e=>{const v=+e.target.value;if(v>1000){RATE=v;persist();refresh()}});
+  document.querySelector("[data-unk]").addEventListener("click",()=>{if(unkEdit){UNK=document.getElementById("unk").value.split("\n").map(x=>x.trim()).filter(Boolean);saveUnk()}unkEdit=!unkEdit;renderPrice()});
+}
+renderPrice();
+/* ================= opslag, documenten, sync, instellingen ================= */
+const KEYS=["items","P","UNK","RATE","META"];
+let MOD=ST.mod||{},lastSnap={},syncTimer=null,syncing=false,stat={msg:"",kind:""};
+const curState=()=>({items,P,UNK,RATE,META});
+const snapKeys=()=>{const s=curState();KEYS.forEach(k=>lastSnap[k]=JSON.stringify(s[k]))};
+const writeLocal=()=>{try{localStorage.setItem("rp-state",JSON.stringify({...curState(),mod:MOD}))}catch(e){}};
+function persist(){
+  const s=curState();
+  KEYS.forEach(k=>{const j=JSON.stringify(s[k]);if(j!==lastSnap[k]){lastSnap[k]=j;MOD[k]=Date.now()}});
+  writeLocal();
+  clearTimeout(syncTimer);syncTimer=setTimeout(()=>sync(),2500);
+}
+function applyKey(k,v){
+  if(k==="items"){items.length=0;items.push(...v)}
+  else if(k==="P")P=v;else if(k==="UNK")UNK=v;else if(k==="RATE")RATE=v;else if(k==="META")META=v;
+  lastSnap[k]=JSON.stringify(v);
+}
+function afterRemote(){
+  HOTELS=META.HOTELS||{};STOPS=META.STOPS||[];LBL=META.LBL||{};
+  items.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0);
+  renderSub();renderNav();["rune","jarne"].forEach(renderPack);refresh();renderSet();writeLocal();
+}
+function renderSub(){const e=document.getElementById("sub");if(e)e.textContent=META.sub||"Mijn reisplanner"}
+
+/* ---- lokale documentopslag (IndexedDB) ---- */
+const idb=(()=>{let p;
+  const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open("rp-docs",1);r.onupgradeneeded=()=>r.result.createObjectStore("docs",{keyPath:"id"});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+  const tx=async(m,f)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction("docs",m);const q=f(t.objectStore("docs"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+  return {get:id=>tx("readonly",s=>s.get(id)),put:o=>tx("readwrite",s=>s.put(o)),del:id=>tx("readwrite",s=>s.delete(id)),all:()=>tx("readonly",s=>s.getAll())};
+})();
+const newLocalId=()=>"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+async function addDoc(file){const id=newLocalId();await idb.put({id,name:file.name,type:file.type||"application/pdf",buf:await file.arrayBuffer(),synced:false});return id}
+function swapDocId(a,b){let n=0;items.forEach(i=>(i.docs||[]).forEach(d=>{if(d.id===a){d.id=b;n++}}));if(n)persist()}
+document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("[data-doc]");if(!a)return;e.preventDefault();openDoc(a.dataset.doc,a.dataset.dn)});
+function showViewer(url,rec,name){
+  let o=document.getElementById("viewer");if(o)o.remove();
+  o=document.createElement("div");o.id="viewer";
+  const img=/^image\//.test(rec.type);
+  o.innerHTML=`<div class="vh"><b>${esc(name||rec.name)}</b><span><a href="${url}" download="${esc(rec.name||"document")}">Bewaar / deel</a> <button class="btn" data-act="closeviewer">Sluit</button></span></div>${img?`<img src="${url}" alt="">`:`<iframe src="${url}" title="document"></iframe>`}`;
+  document.body.appendChild(o);
+}
+async function openDoc(id,name){
+  let rec=null;try{rec=await idb.get(id)}catch(e){}
+  if(!rec){
+    if(!navigator.onLine||!tok()){alert("Dit document staat nog niet op dit toestel. Open het één keer met internet en aangemeld bij Google.");return}
+    try{const r=await gfetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");const buf=await r.arrayBuffer();
+      rec={id,name:name||"document",type:r.headers.get("content-type")||"application/pdf",buf,synced:true};await idb.put(rec)}
+    catch(e){alert("Openen mislukt.");return}
+  }
+  showViewer(URL.createObjectURL(new Blob([rec.buf],{type:rec.type})),rec,name);
+}
+async function prefetchDocs(){
+  const ids=[...new Set(items.flatMap(i=>(i.docs||[]).map(d=>d.id)))].filter(id=>!/^L/.test(id));
+  for(const id of ids){let have=null;try{have=await idb.get(id)}catch(e){}
+    if(have)continue;
+    try{const r=await gfetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");
+      await idb.put({id,name:id,type:r.headers.get("content-type")||"application/pdf",buf:await r.arrayBuffer(),synced:true})}catch(e){if(e.message==="noauth")return}}
+}
+
+/* ---- Google-aanmelding (redirect, token 1 u, wordt stil vernieuwd) ---- */
+const clientId=()=>{try{return localStorage.getItem("rp-cid")||""}catch(e){return""}};
+const redirectUri=()=>location.origin+location.pathname;
+function tok(){try{const t=JSON.parse(localStorage.getItem("rp-tok"));return t&&t.exp>Date.now()+60000?t.t:null}catch(e){return null}}
+function login(prompt){
+  if(!clientId()){alert("Vul eerst je Google Client-ID in (tab ⚙).");return}
+  const q=new URLSearchParams({client_id:clientId(),redirect_uri:redirectUri(),response_type:"token",scope:"https://www.googleapis.com/auth/drive.appdata",include_granted_scopes:"true"});
+  if(prompt)q.set("prompt",prompt);
+  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+q;
+}
+let authErr="";
+(()=>{const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get("access_token")){try{localStorage.setItem("rp-tok",JSON.stringify({t:h.get("access_token"),exp:Date.now()+(+h.get("expires_in")||3600)*1000}));localStorage.setItem("rp-was","1")}catch(e){}history.replaceState(null,"",location.pathname+location.search)}
+  else if(h.get("error")){authErr=h.get("error");history.replaceState(null,"",location.pathname+location.search)}})();
+async function gfetch(u,o={}){
+  const t=tok();if(!t)throw new Error("noauth");
+  o.headers=Object.assign({Authorization:"Bearer "+t},o.headers||{});
+  const r=await fetch(u,o);
+  if(r.status===401){try{localStorage.removeItem("rp-tok")}catch(e){}throw new Error("noauth")}
+  if(!r.ok)throw new Error("http "+r.status);
+  return r;
+}
+const DAPI="https://www.googleapis.com/drive/v3/files",UAPI="https://www.googleapis.com/upload/drive/v3/files";
+async function multipart(meta,type,data){
+  const b="rpb"+Math.random().toString(36).slice(2);
+  const head=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: ${type}\r\n\r\n`;
+  const r=await gfetch(UAPI+"?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+b},body:new Blob([head,data,`\r\n--${b}--`])});
+  return (await r.json()).id;
+}
+async function findFile(){
+  const r=await gfetch(DAPI+"?spaces=appDataFolder&fields=files(id)&q="+encodeURIComponent("name='reisplanner.json'"));
+  const j=await r.json();return j.files&&j.files[0];
+}
+const hhmm=()=>new Date().toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"});
+function setStat(msg,kind){
+  stat={msg,kind:kind||""};
+  const b=document.getElementById("syncbar");
+  if(b)b.innerHTML=`<span class="dot ${esc(kind||"")}"></span>${esc(msg)}${kind==="auth"&&clientId()?' <button class="btn" data-act="login">Aanmelden</button>':""}`;
+  const s=document.getElementById("set-stat");if(s)s.textContent=msg;
+}
+async function sync(){
+  if(syncing)return;
+  if(!navigator.onLine){setStat("Offline: wijzigingen staan op dit toestel en gaan mee zodra er internet is.","off");return}
+  if(!clientId()){setStat("Nog niet gekoppeld aan Google Drive. Zie tab ⚙.","off");return}
+  if(!tok()){setStat(authErr?"Aanmelden nodig.":"Aanmelden bij Google nodig om te synchroniseren.","auth");return}
+  syncing=true;setStat("Synchroniseren…","busy");
+  try{
+    for(const rec of (await idb.all()).filter(r=>!r.synced)){
+      const nid=await multipart({name:"doc-"+rec.id,parents:["appDataFolder"],mimeType:rec.type},rec.type,rec.buf);
+      await idb.put({...rec,id:nid,synced:true});await idb.del(rec.id);swapDocId(rec.id,nid);
+    }
+    const f=await findFile();let remote=null;
+    if(f)remote=await (await gfetch(DAPI+"/"+f.id+"?alt=media")).json();
+    let push=!f,changed=false;const rm=(remote&&remote.mod)||{};
+    KEYS.forEach(k=>{const lm=MOD[k]||0,rk=rm[k]||0;
+      if(remote&&remote[k]!==undefined&&rk>lm){applyKey(k,remote[k]);MOD[k]=rk;changed=true}
+      else if(lm>rk)push=true});
+    if(changed)afterRemote();
+    if(push){const body=JSON.stringify({v:1,...curState(),mod:MOD});
+      if(f)await gfetch(UAPI+"/"+f.id+"?uploadType=media",{method:"PATCH",headers:{"Content-Type":"application/json"},body});
+      else await multipart({name:"reisplanner.json",parents:["appDataFolder"],mimeType:"application/json"},"application/json",body)}
+    setStat("Gesynchroniseerd om "+hhmm(),"ok");
+    prefetchDocs();
+  }catch(e){setStat(e.message==="noauth"?"Aanmelden bij Google nodig.":"Synchroniseren mislukt, probeer later opnieuw.",e.message==="noauth"?"auth":"err")}
+  finally{syncing=false}
+}
+
+/* ---- import / export ---- */
+const b64buf=s=>{const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer};
+async function importFile(f){
+  const msg=document.getElementById("imp-msg");if(!f)return;
+  try{
+    const j=JSON.parse(await f.text());
+    if(!Array.isArray(j.items))throw new Error("Geen planning gevonden in dit bestand.");
+    if(items.length&&!confirm("Dit vervangt de planning op dit toestel én in Google Drive. Doorgaan?"))return;
+    const map={};
+    for(const [old,fl] of Object.entries(j.files||{})){const id=newLocalId();map[old]=id;
+      await idb.put({id,name:fl.name||fl.n||"document",type:fl.type||"application/pdf",buf:b64buf(fl.b64),synced:false})}
+    j.items.forEach(i=>(i.docs||[]).forEach(d=>{if(map[d.id])d.id=map[d.id]}));
+    KEYS.forEach(k=>{if(j[k]!==undefined){applyKey(k,j[k]);MOD[k]=Date.now()}});
+    afterRemote();writeLocal();
+    if(msg)msg.textContent="Geïmporteerd: "+j.items.length+" items en "+Object.keys(map).length+" documenten. Synchroniseren naar Drive…";
+    sync();
+  }catch(e){if(msg)msg.textContent="Importeren mislukt: "+e.message}
+}
+function exportFile(){
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify({v:1,...curState(),mod:MOD},null,1)],{type:"application/json"}));
+  a.download="reisplanner-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();
+}
+
+/* ---- instellingen ---- */
+function renderSet(){
+  const el=document.getElementById("v-set");if(!el)return;
+  el.innerHTML=`<div class="cat"><h3><span>GOOGLE DRIVE</span></h3>
+  <div class="meta" id="set-stat">${esc(stat.msg)}</div>
+  <div class="add"><input type="text" id="cid" placeholder="Client-ID (…apps.googleusercontent.com)" value="${esc(clientId())}" autocapitalize="off" autocorrect="off"><button class="btn" data-act="savecid">Bewaar</button></div>
+  <div style="margin-top:8px"><button class="btn p" data-act="login">${tok()?"Opnieuw aanmelden":"Aanmelden met Google"}</button> <button class="btn" data-act="sync">Nu synchroniseren</button></div>
+  <div class="meta" style="margin-top:8px">Google vraagt om deze Redirect-URI: <b style="word-break:break-all">${esc(redirectUri())}</b></div>
+  <details><summary>Hoe krijg ik een Client-ID? (eenmalig, 5 min)</summary><ol class="meta" style="padding-left:18px">
+   <li>Ga op een computer naar console.cloud.google.com en maak een nieuw project.</li>
+   <li>Zet bij “API’s en services” de <b>Google Drive API</b> aan.</li>
+   <li>Kies “OAuth-toestemmingsscherm”: type Extern, vul een naam en je e-mailadres in en voeg dat adres toe als testgebruiker. Zet het daarna op “In productie”, anders verloopt de toestemming na 7 dagen.</li>
+   <li>Kies “Inloggegevens” → “Inloggegevens maken” → “OAuth-client-ID” → type <b>Webtoepassing</b>.</li>
+   <li>Zet bij “Geautoriseerde JavaScript-bronnen” <b>${esc(location.origin)}</b> en bij “Geautoriseerde omleidings-URI’s” <b>${esc(redirectUri())}</b>.</li>
+   <li>Kopieer de Client-ID hierboven. Doe hetzelfde op de iPhone van je vriendin (zelfde Client-ID, zelfde Google-account).</li></ol></details></div>
+  <div class="cat"><h3><span>GEGEVENS</span></h3>
+  <label class="meta">Startbestand importeren (.json)<input type="file" id="imp" accept=".json,application/json" style="width:100%;margin-top:4px"></label>
+  <div class="meta" id="imp-msg" style="margin-top:6px"></div>
+  <div style="margin-top:8px"><button class="btn" data-act="export">Back-up downloaden</button></div>
+  <div class="meta" style="margin-top:6px">Alle gegevens staan in een verborgen map van je Google Drive (alleen deze app ziet ze) en op dit toestel.</div></div>
+  <div class="cat"><h3><span>OP JE BEGINSCHERM</span></h3><div class="meta">Open deze pagina in Safari, tik op Deel en kies “Zet op beginscherm”. Laat “Open als webapp” <b>uit</b>: dan blijft aanmelden bij Google werken. De app werkt daarna ook zonder internet; open hem af en toe met internet zodat alles gesynchroniseerd is.</div></div>`;
+}
+document.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.act;if(!a)return;
+  if(a==="closeviewer"){const v=document.getElementById("viewer");if(v)v.remove()}
+  else if(a==="login")login();
+  else if(a==="sync")sync();
+  else if(a==="export")exportFile();
+  else if(a==="savecid"){const v=document.getElementById("cid").value.trim();try{localStorage.setItem("rp-cid",v)}catch(x){}setStat(v?"Client-ID bewaard. Tik op Aanmelden met Google.":"Client-ID verwijderd.","off")}
+});
+document.addEventListener("change",e=>{if(e.target.id==="imp")importFile(e.target.files[0])});
+window.addEventListener("online",()=>sync());
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sync()});
+setInterval(()=>sync(),180000);
+
+/* ---- start ---- */
+snapKeys();renderSub();renderNav();renderSet();
+afterRemote();
+if(authErr)setStat("Stil aanmelden mislukt: tik op Aanmelden.","auth");
+if(clientId()&&!tok()&&!authErr&&navigator.onLine&&localStorage.getItem("rp-was")&&!sessionStorage.getItem("rp-silent")){
+  try{sessionStorage.setItem("rp-silent","1")}catch(e){}login("none");
+}else sync();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+</script>
+</body>
+</html>
